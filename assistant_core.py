@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
 
@@ -16,6 +17,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
+load_dotenv(Path(__file__).resolve().with_name(".env"))
 API_KEY = os.getenv("DEEPSEEK_API_KEY", "sk-请填入你的DeepSeek_KEY")
 MODEL = "deepseek-chat"
 DB_PATH = Path(__file__).resolve().with_name("campus.db")

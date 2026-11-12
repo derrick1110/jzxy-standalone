@@ -35,6 +35,12 @@ python -m pip install -r requirements.txt
 $env:DEEPSEEK_API_KEY="你的 DeepSeek API Key"
 ```
 
+也可以在项目目录创建被 Git 忽略的 `.env` 文件：
+
+```dotenv
+DEEPSEEK_API_KEY=你的 DeepSeek API Key
+```
+
 ## 抓取新闻
 
 ```powershell
