@@ -1,8 +1,8 @@
 # 荆州学院公开资讯 AI 助手
 
 一个完全独立运行的校园公开资讯问答项目。项目使用 FastAPI 提供 HTTP API，
-直接通过 OpenAI SDK 调用 DeepSeek 的 Function Calling，不依赖 Codex、MCP
-或其他外部 Agent 框架。
+通过 LangChain 的 Tool Calling Agent 和 `AgentExecutor` 调用 DeepSeek，
+不依赖 Codex、MCP 或其他外部 Agent 平台。
 
 网页前端会检索本地 `campus.db` 中的荆州学院公开新闻，并在回答下方展示官网来源。
 
@@ -10,7 +10,8 @@
 
 - 抓取荆州学院官网首页“综合要闻”及详情页正文
 - 使用 SQLite 存储公开新闻，并通过 URL 唯一约束避免重复
-- DeepSeek Function Calling 自动调用本地新闻搜索工具
+- LangChain `AgentExecutor` 自动决定是否调用本地新闻搜索工具
+- DeepSeek `deepseek-chat` 通过 `langchain-openai` 接入
 - FastAPI `/api/chat` 接口
 - 允许所有 localhost / 127.0.0.1 本地端口跨域访问
 - 响应式网页聊天界面与可点击的官网来源卡片
@@ -88,7 +89,8 @@ Content-Type: application/json
       "url": "https://www.jzun.edu.cn/info/159/18270.htm"
     }
   ],
-  "tool_used": true
+  "tool_used": true,
+  "framework": "LangChain AgentExecutor"
 }
 ```
 
@@ -102,7 +104,8 @@ Streamlit、Gradio、Vite 等前端调用。
 ```text
 jzxy-standalone/
 ├── app_api.py              FastAPI 服务入口
-├── assistant_core.py       DeepSeek、工具调用和只读新闻检索
+├── rag_agent.py            LangChain Tool Calling Agent 与 AgentExecutor
+├── assistant_core.py       配置、提示词和只读新闻检索工具
 ├── fetch_news.py           官网新闻抓取与入库
 ├── campus.db               SQLite 新闻数据库
 ├── requirements.txt        Python 依赖
@@ -115,3 +118,21 @@ jzxy-standalone/
 - `.env`、虚拟环境和本地个人数据不会提交到 Git。
 - 新闻搜索函数只执行 `SELECT` 查询。
 - API Key 仅从服务端环境变量读取。
+
+## LangChain Agent 架构
+
+```text
+网页前端
+   ↓ POST /api/chat
+FastAPI
+   ↓
+LangChain AgentExecutor
+   ↓
+Tool Calling Agent ──→ search_public_news
+   ↓                         ↓
+DeepSeek API             SQLite 新闻库
+```
+
+`rag_agent.py` 使用 `ChatOpenAI`、`@tool`、`create_tool_calling_agent`
+和 `AgentExecutor`。接口会从 Agent 的中间步骤中提取命中的公开新闻，并随最终
+回答一起返回给网页。

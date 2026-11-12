@@ -1,4 +1,4 @@
-"""荆州学院公开资讯 AI 助手 FastAPI 服务。"""
+"""荆州学院公开资讯 AI 助手：FastAPI + LangChain AgentExecutor。"""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 from starlette.concurrency import run_in_threadpool
 
 import assistant_core
+import rag_agent
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -21,8 +22,8 @@ PLACEHOLDER_KEY = "sk-请填入你的DeepSeek_KEY"
 
 app = FastAPI(
     title="荆州学院公开资讯 AI 助手 API",
-    description="基于本地公开新闻库和 DeepSeek Function Calling 的问答接口。",
-    version="1.0.0",
+    description="基于 LangChain AgentExecutor、DeepSeek 和本地公开新闻库的问答接口。",
+    version="2.0.0",
 )
 
 # 允许任意 localhost / 127.0.0.1 端口访问，包括本地开发服务器。
@@ -68,6 +69,7 @@ class ChatResponse(BaseModel):
     reply: str
     sources: List[NewsSource] = Field(default_factory=list)
     tool_used: bool = False
+    framework: str = "LangChain AgentExecutor"
 
 
 def get_news_meta() -> dict:
@@ -103,6 +105,7 @@ def api_health() -> dict:
         "status": "ok",
         "api_key_configured": assistant_core.API_KEY != PLACEHOLDER_KEY,
         "database": get_news_meta(),
+        "agent_framework": "LangChain AgentExecutor",
     }
 
 
@@ -119,10 +122,7 @@ async def api_chat(payload: ChatRequest) -> ChatResponse:
         )
 
     try:
-        reply, sources, tool_used = await run_in_threadpool(
-            assistant_core.answer_question,
-            [{"role": "user", "content": payload.message}],
-        )
+        result = await run_in_threadpool(rag_agent.chat, payload.message)
     except Exception as exc:
         raise HTTPException(
             status_code=502,
@@ -130,7 +130,7 @@ async def api_chat(payload: ChatRequest) -> ChatResponse:
         ) from exc
 
     return ChatResponse(
-        reply=reply,
-        sources=sources,
-        tool_used=tool_used,
+        reply=result["reply"],
+        sources=result["sources"],
+        tool_used=result["tool_used"],
     )
