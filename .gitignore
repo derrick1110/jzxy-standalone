@@ -1,0 +1,20 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Personal data
+course_schedule.json
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
